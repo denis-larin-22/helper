@@ -1,8 +1,11 @@
 'use client'
 
-const LS_KEY = 'daily-nutrient-result';
+import { getFormattedDate } from "./utils";
+
+const LS_KEY = 'daily-nutrient-data';
 
 interface IDailyNutrients {
+    date: string,
     dailyProteins: number,
     dailyCarbohydrates: number,
     dailyFats: number,
@@ -25,6 +28,7 @@ export function updateDailyNutrientsLS(updates: IUpdates) {
 
     if (!dailyNutrientFromLS) {
         const dailyNutrients: IDailyNutrients = {
+            date: getFormattedDate(),
             dailyProteins: updates.proteinsResult,
             dailyCarbohydrates: updates.carbohydratesResult,
             dailyFats: updates.fatsResult,
@@ -34,13 +38,25 @@ export function updateDailyNutrientsLS(updates: IUpdates) {
         localStorage.setItem(LS_KEY, JSON.stringify(dailyNutrients));
     } else {
         const dailyNutrients: IDailyNutrients = JSON.parse(dailyNutrientFromLS);
+        const currentDate = getFormattedDate();
 
-        localStorage.setItem(LS_KEY, JSON.stringify({
-            dailyProteins: dailyNutrients.dailyProteins + updates.proteinsResult,
-            dailyCarbohydrates: dailyNutrients.dailyCarbohydrates + updates.carbohydratesResult,
-            dailyFats: dailyNutrients.dailyFats + updates.fatsResult,
-            dailyKilocalories: dailyNutrients.dailyKilocalories + updates.kilocaloriesResult
-        }))
+        if (dailyNutrients.date === currentDate) {
+            localStorage.setItem(LS_KEY, JSON.stringify({
+                date: dailyNutrients.date,
+                dailyProteins: dailyNutrients.dailyProteins + updates.proteinsResult,
+                dailyCarbohydrates: dailyNutrients.dailyCarbohydrates + updates.carbohydratesResult,
+                dailyFats: dailyNutrients.dailyFats + updates.fatsResult,
+                dailyKilocalories: dailyNutrients.dailyKilocalories + updates.kilocaloriesResult
+            }))
+        } else {
+            localStorage.setItem(LS_KEY, JSON.stringify({
+                date: currentDate,
+                dailyProteins: dailyNutrients.dailyProteins + updates.proteinsResult,
+                dailyCarbohydrates: dailyNutrients.dailyCarbohydrates + updates.carbohydratesResult,
+                dailyFats: dailyNutrients.dailyFats + updates.fatsResult,
+                dailyKilocalories: dailyNutrients.dailyKilocalories + updates.kilocaloriesResult
+            }))
+        }
     }
 }
 
@@ -49,12 +65,27 @@ export function getDailyNutrientsLS(): IDailyNutrients | null {
         return null;
     }
 
+    const currentDate = getFormattedDate();
+
     const dailyNutrients = localStorage.getItem(LS_KEY);
 
     if (dailyNutrients) {
-        return JSON.parse(dailyNutrients) as IDailyNutrients;
+        const result = JSON.parse(dailyNutrients) as IDailyNutrients;
+
+        if (result.date === currentDate) {
+            return result;
+        } else {
+            return {
+                date: getFormattedDate(),
+                dailyProteins: 0,
+                dailyCarbohydrates: 0,
+                dailyFats: 0,
+                dailyKilocalories: 0
+            }
+        }
     } else {
         return {
+            date: getFormattedDate(),
             dailyProteins: 0,
             dailyCarbohydrates: 0,
             dailyFats: 0,
